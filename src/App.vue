@@ -57,7 +57,7 @@
 
 <script>
 import store from "@/store";
-import firebase from "@/firebase";
+import { firebase, db } from "@/firebase";
 
 firebase.auth().onAuthStateChanged((user) => {
   if (user) {

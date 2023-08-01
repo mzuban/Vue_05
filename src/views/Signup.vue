@@ -53,7 +53,7 @@
 </template>
 
 <script>
-import firebase from "@/firebase";
+import { firebase, db } from "@/firebase";
 
 export default {
   name: "Signup",
