@@ -24,22 +24,13 @@
         </div>
         <button type="submit" class="btn btn-primary ml-2">Post image</button>
       </form>
-      <div v-for="card in filteredCards" :key="card.url" class="card">
-        <div class="card-header">{{ card.title }}</div>
-        <div class="card-body">
-          <img class="card-img-top" :src="card.url" alt="neka slika..." />
-        </div>
-        <div class="card-footer text-muted">
-          {{ card.time }}
-        </div>
-        <div class="card-owner">
-          <p>Ime: {{ card.owner.ime }}</p>
-          <p>Prezime: {{ card.owner.prezime }}</p>
-        </div>
-      </div>
+      <instagram-card
+        v-for="card in filteredCards"
+        :key="card.id"
+        :info="card"
+      />
     </div>
-    <div class="col-4"></div>
-    Sidebar
+    <div class="col-4">Sidebar</div>
   </div>
 </template>
 
@@ -48,46 +39,47 @@ import InstagramCard from "@/components/InstagramCard.vue";
 import store from "@/store";
 import { db } from "@/firebase";
 
-let cards = [];
-
-cards = [
-  {
-    title: "Naslov 1",
-    time: "an hour ago",
-    url: "https://picsum.photos/id/1/400/400",
-    owner: { ime: "Ivo", prezime: "Ivić" },
-  },
-  {
-    title: "Naslov 2",
-    time: "1 day ago",
-    url: "https://picsum.photos/id/2/400/400",
-    owner: { ime: "Marko", prezime: "Marković" },
-  },
-  {
-    title: "Naslov 3",
-    time: "2 days ago",
-    url: "https://picsum.photos/id/3/400/400",
-    owner: { ime: "Ana", prezime: "Anić" },
-  },
-  {
-    title: "Naslov 4",
-    time: "3 days ago",
-    url: "https://picsum.photos/id/4/400/400",
-    owner: { ime: "Petra", prezime: "Petrić" },
-  },
-];
+//cards = [
+// {description: "Naslov 1",time: "an hour ago",url: "https://picsum.photos/id/1/400/400"},
+// {description: "Naslov 2",time: "1 day ago",url: "https://picsum.photos/id/2/400/400"},
+// {description: "Naslov 3",time: "2 days ago",url: "https://picsum.photos/id/3/400/400"},
+// {description: "Naslov 4",time: "3 days ago",url: "https://picsum.photos/id/4/400/400"},];
 
 export default {
   name: "home",
   data() {
     return {
-      cards,
+      cards: [],
       store,
       newImageDescription: "",
       newImageUrl: "",
     };
   },
+  mounted() {
+    this.getPosts();
+  },
   methods: {
+    getPosts() {
+      console.log("firebase dohvat...");
+      db.collection("posts")
+        .orderBy("posted_at", "desc")
+        .limit(10)
+        .get()
+        .then((query) => {
+          this.cards = [];
+          query.forEach((doc) => {
+            const data = doc.data();
+            console.log(data);
+
+            this.cards.push({
+              id: doc.id,
+              url: data.url,
+              time: data.posted_at,
+              description: data.desc,
+            });
+          });
+        });
+    },
     postNewImage() {
       const imageUrl = this.newImageUrl;
       const imageDescription = this.newImageDescription;
@@ -103,6 +95,7 @@ export default {
           console.log("Spremljeno", doc);
           this.newImageDescription = "";
           this.newImageUrl = "";
+          this.getPosts();
         })
         .catch((e) => {
           console.error(e);
@@ -111,18 +104,15 @@ export default {
   },
   computed: {
     filteredCards() {
-      //logika koja filtrira cards
-      let searchTerm = this.store.searchTerm.toLowerCase();
-      return this.cards.filter(
-        (card) =>
-          card.title.toLowerCase().indexOf(searchTerm) >= 0 ||
-          (card.owner &&
-            (card.owner.ime.toLowerCase().indexOf(searchTerm) >= 0 ||
-              card.owner.prezime.toLowerCase().indexOf(searchTerm) >= 0))
-      );
+      // logika koja filtrira cards
+      let termin = this.store.searchTerm;
+
+      return this.cards.filter((card) => card.description.includes(termin));
     },
   },
-  components: {},
+  components: {
+    InstagramCard,
+  },
 };
 </script>
 
